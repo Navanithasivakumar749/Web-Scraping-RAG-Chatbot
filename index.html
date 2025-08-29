@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart Web Q&A Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #e0eafc, #cfdef3);
+            margin: 0;
+            padding: 30px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #ffffff;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .header {
+            background-color: #007bff;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .url-input-container {
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .url-input-container input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        .url-input-container button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .url-input-container .history-button {
+            background-color: #6c757d; /* Grey color for history button */
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            background-color: #f9f9f9;
+            overflow-y: auto;
+            height: 500px;
+            display: flex;
+            flex-direction: column; /* Ensure messages stack vertically */
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 12px 16px;
+            border-radius: 16px;
+            max-width: 70%;
+            line-height: 1.4;
+        }
+
+        .user {
+            background-color: #d1ecf1;
+            align-self: flex-end;
+        }
+
+        .bot {
+            background-color: #f8d7da;
+            align-self: flex-start;
+        }
+
+        .input-container {
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        .input-container button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .input-container button:hover,
+        .url-input-container button:hover {
+            opacity: 0.9;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            border-radius: 10px;
+            width: 80%; /* Could be responsive */
+            max-width: 700px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative; /* For close button positioning */
+        }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .history-controls {
+            display: flex;
+            justify-content: flex-end; /* Align to the right */
+            margin-bottom: 15px;
+        }
+
+        .history-controls button {
+            background-color: #dc3545; /* Red for delete all */
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .history-controls button:hover {
+            opacity: 0.9;
+        }
+
+        .history-item {
+            border: 1px solid #eee;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background-color: #f0f0f0;
+            /* Changed to column to stack info and conversation */
+            display: flex;
+            flex-direction: column;
+            position: relative; /* For delete button positioning */
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .history-item-header div {
+            flex: 1;
+        }
+
+        .history-item-header button {
+            background-color: #dc3545; /* Red for delete */
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px; /* Space from text */
+        }
+        .history-item-header button:hover {
+            opacity: 0.9;
+        }
+
+        .history-item strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .history-conversation {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px; /* Limit height for long conversations */
+            overflow-y: auto; /* Scroll if content overflows */
+        }
+
+        .history-conversation .message {
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 12px;
+            max-width: 90%; /* Adjust for nested messages */
+            font-size: 14px;
+        }
+
+        .history-conversation .user {
+            background-color: #e6f7ff; /* Lighter blue for history user */
+            align-self: flex-end;
+        }
+
+        .history-conversation .bot {
+            background-color: #ffe6e6; /* Lighter red for history bot */
+            align-self: flex-start;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">🌐 Smart Web Chatbot</div>
+
+    <div class="url-input-container">
+        <input type="text" id="urlInput" placeholder="Enter URL to scrape..." />
+        <button onclick="scrapeURL()">Scrape</button>
+        <button class="history-button" onclick="showHistory()">History</button>
+    </div>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="input-container">
+        <input type="text" id="userInput" placeholder="Ask a question about the scraped content..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeHistory()">&times;</span>
+        <h2>Conversation History</h2>
+        <div class="history-controls">
+            <button onclick="clearAllHistory()">Clear All History</button>
+        </div>
+        <div id="historyList">
+            </div>
+    </div>
+</div>
+
+<script>
+    let scraped = false;
+    let loadingMessageEl = null;
+    let currentConversation = []; // Stores messages for the current session
+
+    // Initialize conversation history from localStorage
+    let conversations = JSON.parse(localStorage.getItem('chatConversations')) || [];
+
+    async function scrapeURL() {
+        const url = document.getElementById('urlInput').value.trim();
+        if (!url) return alert("Enter a URL to scrape.");
+
+        // Clear previous conversation and start a new one
+        currentConversation = [{ type: 'system', text: `Scraping URL: ${url}` }];
+        document.getElementById('chatBox').innerHTML = ''; // Clear chatbox
+        appendBotMessage("Scraping content, please wait...");
+        scraped = false;
+
+        try {
+            const res = await fetch('http://localhost:8000/scrape', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                scraped = true;
+                const successMsg = "✅ Content scraped successfully. You can now ask questions.";
+                appendBotMessage(successMsg);
+                currentConversation.push({ type: 'bot', text: successMsg });
+            } else {
+                const errorMsg = "⚠️ Failed to scrape content. " + (data.error || data.details || "");
+                appendBotMessage(errorMsg);
+                currentConversation.push({ type: 'bot', text: errorMsg });
+            }
+            saveCurrentConversation(url); // Save conversation after scraping
+        } catch (err) {
+            console.error(err);
+            const errorMsg = "🔴 Error connecting to backend: " + err.message;
+            appendBotMessage(errorMsg);
+            currentConversation.push({ type: 'bot', text: errorMsg });
+            saveCurrentConversation(url); // Save even if there's an error
+        }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const question = input.value.trim();
+        if (!question) return;
+        if (!scraped) {
+            appendBotMessage("⚠️ Please scrape a URL before asking.");
+            return;
+        }
+
+        appendUserMessage(question);
+        currentConversation.push({ type: 'user', text: question });
+        input.value = '';
+
+        loadingMessageEl = appendBotMessage("🤖 Thinking...");
+        currentConversation.push({ type: 'bot', text: "🤖 Thinking...", isTemp: true }); // Mark as temporary
+
+        try {
+            const res = await fetch('http://localhost:8000/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: question })
+            });
+            const data = await res.json();
+
+            if (loadingMessageEl) loadingMessageEl.remove();
+            // Remove the temporary "Thinking..." message from currentConversation
+            if (currentConversation[currentConversation.length - 1] && currentConversation[currentConversation.length - 1].isTemp) {
+                currentConversation.pop();
+            }
+
+            if (data.response) {
+                const clean = cleanResponse(data.response);
+                if (clean) {
+                    appendBotMessage(clean);
+                    currentConversation.push({ type: 'bot', text: clean });
+                } else {
+                    const noAnswerMsg = "⚠️ Sorry, I couldn’t find an answer to that.";
+                    appendBotMessage(noAnswerMsg);
+                    currentConversation.push({ type: 'bot', text: noAnswerMsg });
+                }
+            } else {
+                const noResponseMsg = "⚠️ No response: " + (data.error || "Unknown error");
+                appendBotMessage(noResponseMsg);
+                currentConversation.push({ type: 'bot', text: noResponseMsg });
+            }
+            saveCurrentConversation(); // Save conversation after each message
+        } catch (err) {
+            if (loadingMessageEl) loadingMessageEl.remove();
+            if (currentConversation[currentConversation.length - 1] && currentConversation[currentConversation.length - 1].isTemp) {
+                currentConversation.pop();
+            }
+            const errorMsg = "🔴 Error contacting backend: " + err.message;
+            appendBotMessage(errorMsg);
+            currentConversation.push({ type: 'bot', text: errorMsg });
+            saveCurrentConversation(); // Save even if there's an error
+        }
+    }
+
+    function cleanResponse(text) {
+        if (!text) return '';
+        const removedThink = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        const cleaned = removedThink.replace(/I don't have enough information.*$/, '').trim();
+        return cleaned || null;
+    }
+
+    function appendUserMessage(text) {
+        const msg = document.createElement('div');
+        msg.className = 'message user';
+        msg.innerText = text;
+        document.getElementById('chatBox').appendChild(msg);
+        scroll();
+    }
+
+    function appendBotMessage(text) {
+        const msg = document.createElement('div');
+        msg.className = 'message bot';
+        msg.innerText = text;
+        document.getElementById('chatBox').appendChild(msg);
+        scroll();
+        return msg;
+    }
+
+    function scroll() {
+        const chat = document.getElementById('chatBox');
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    // --- History Functions ---
+
+    function saveCurrentConversation(url = null) {
+        // Filter out system messages and temporary messages before saving
+        const messagesToSave = currentConversation.filter(msg => !msg.isTemp && msg.type !== 'system');
+        if (messagesToSave.length === 0) return; // Don't save empty conversations or just system messages
+
+        const lastScrapedUrl = url || (currentConversation.length > 0 && currentConversation[0].type === 'system' ? currentConversation[0].text.replace('Scraping URL: ', '') : 'No URL');
+        
+        // Find if an existing conversation started with the same URL (and ideally, same initial messages)
+        // For simplicity, we'll just check the URL and if it's the active conversation.
+        let existingIndex = -1;
+        // If we are updating an existing conversation, we should find the one that matches the URL
+        // and ideally, is the most recent one for that URL.
+        for (let i = conversations.length - 1; i >= 0; i--) {
+            if (conversations[i].url === lastScrapedUrl) {
+                existingIndex = i;
+                break;
+            }
+        }
+
+        if (existingIndex !== -1) {
+            // Update existing conversation
+            conversations[existingIndex].messages = messagesToSave;
+            conversations[existingIndex].timestamp = new Date().toLocaleString();
+        } else {
+            // Add new conversation
+            conversations.push({
+                id: Date.now(), // Unique ID for each conversation
+                url: lastScrapedUrl,
+                timestamp: new Date().toLocaleString(),
+                messages: messagesToSave
+            });
+        }
+        localStorage.setItem('chatConversations', JSON.stringify(conversations));
+    }
+
+    function showHistory() {
+        const historyModal = document.getElementById('historyModal');
+        const historyList = document.getElementById('historyList');
+        historyList.innerHTML = ''; // Clear previous history
+
+        conversations = JSON.parse(localStorage.getItem('chatConversations')) || []; // Reload from storage
+
+        if (conversations.length === 0) {
+            historyList.innerHTML = '<p>No conversation history found.</p>';
+        } else {
+            // Display conversations in reverse chronological order
+            conversations.slice().reverse().forEach(conv => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+
+                // Header for URL, Time, and Delete Button
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'history-item-header';
+                headerDiv.innerHTML = `
+                    <div>
+                        <strong>URL:</strong> ${conv.url || 'Not Available'}<br>
+                        <strong>Time:</strong> ${conv.timestamp}
+                    </div>
+                    <button onclick="deleteConversation(${conv.id})">Delete</button>
+                `;
+                historyItem.appendChild(headerDiv);
+
+                // Conversation messages container
+                const conversationDiv = document.createElement('div');
+                conversationDiv.className = 'history-conversation';
+                
+                if (conv.messages && conv.messages.length > 0) {
+                    conv.messages.forEach(msg => {
+                        if (!msg.isTemp) { // Ensure temporary messages aren't shown
+                            const msgEl = document.createElement('div');
+                            msgEl.className = `message ${msg.type}`;
+                            msgEl.innerText = msg.text;
+                            conversationDiv.appendChild(msgEl);
+                        }
+                    });
+                } else {
+                    conversationDiv.innerHTML = '<p>No messages in this conversation.</p>';
+                }
+                historyItem.appendChild(conversationDiv);
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+        historyModal.style.display = 'flex'; // Show modal
+    }
+
+    function closeHistory() {
+        document.getElementById('historyModal').style.display = 'none'; // Hide modal
+    }
+
+    function deleteConversation(idToDelete) {
+        if (confirm('Are you sure you want to delete this conversation?')) {
+            conversations = conversations.filter(conv => conv.id !== idToDelete);
+            localStorage.setItem('chatConversations', JSON.stringify(conversations));
+            showHistory(); // Refresh the history list
+        }
+    }
+
+    function clearAllHistory() {
+        if (confirm('Are you sure you want to delete ALL conversation history? This cannot be undone.')) {
+            localStorage.removeItem('chatConversations'); // Remove the entire item from localStorage
+            conversations = []; // Clear the in-memory array
+            showHistory(); // Refresh the history list (will show "No conversation history found.")
+        }
+    }
+
+    // Event listener for Enter key in user input
+    document.getElementById('userInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    // Close modal if user clicks outside of it
+    window.onclick = function(event) {
+        const historyModal = document.getElementById('historyModal');
+        if (event.target == historyModal) {
+            closeHistory();
+        }
+    }
+</script>
+
+</body>
+</html>
